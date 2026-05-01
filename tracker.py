@@ -2,6 +2,7 @@ import requests
 import json
 import os
 from dotenv import load_dotenv
+from datetime import date
 
 load_dotenv()
 API_KEY = os.getenv("RIOT_API_KEY")
@@ -40,26 +41,33 @@ def get_ranked(puuid):
     return None
 
 def actualizar():
-    resultados = []
+    hoy = str(date.today())
+
+    if os.path.exists("datos.json"):
+        with open("datos.json", "r") as f:
+            historial = json.load(f)
+    else:
+        historial = []
+
     for jugador in JUGADORES:
         print(f"Obteniendo datos de {jugador['nombre']}...")
         puuid = get_puuid(jugador["nombre"], jugador["tag"])
-        print("PUUID:", puuid)
         summoner = get_summoner(puuid)
-        print("Summoner:", summoner)
         ranked = get_ranked(puuid)
         if ranked:
-            resultados.append({
+            entrada = {
+                "fecha": hoy,
                 "nombre": jugador["nombre"],
                 **ranked
-            })
-            print(f"  {ranked['tier']} {ranked['rank']} {ranked['lp']}LP — {ranked['winrate']}% WR")
+            }
+            historial.append(entrada)
+            print(f"  {ranked['tier']} {ranked['rank']} {ranked['lp']}LP - {ranked['winrate']}% WR")
         else:
             print(f"  Sin ranked este split")
-    
+
     with open("datos.json", "w") as f:
-        json.dump(resultados, f, indent=2)
-    print("\nDatos guardados en datos.json")
+        json.dump(historial, f, indent=2)
+    print("\nHistorial actualizado en datos.json")
 
 if __name__ == "__main__":
     actualizar()
